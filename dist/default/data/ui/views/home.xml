@@ -1,0 +1,212 @@
+<dashboard version="1.1">
+  <label>WatchGuard Firebox Add-On for Splunk</label>
+  <description>Firebox Network Traffic</description>
+  <search id="base">
+    <query>index="*" eventtype=wg_firebox_traffic serial_number=* | fields _time, host, msg_id, action, policy, src_ip, dest_ip, transport, dest_port, src_port | rename _time as "Time", host as "Firebox", policy as "Policy Name", src_ip as "Source", dest_ip as "Destination", transport as "Protocol" |  fieldformat "Time"=strftime('Time', "%Y-%m-%d %H:%M:%S")</query>
+    <earliest>0</earliest>
+    <latest></latest>
+  </search>
+  <row>
+    <panel>
+      <table>
+        <title>Firebox List</title>
+        <search>
+          <query>index="*" eventtype=wg_firebox_event | dedup serial_number, firebox_name  | stats values(serial_number) by firebox_name</query>
+          <earliest>-1h@h</earliest>
+          <latest>0</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Top 10</title>
+      <chart>
+        <title>Source, Destination, Protocol and Port</title>
+        <search base="base">
+          <query>`firebox_traffic_action` | eval Protocol=upper(Protocol) | eval tuple=Source." to ".Destination." ".Protocol." ".dest_port | stats count by tuple | sort - count | head 10</query>
+        </search>
+        <option name="charting.axisTitleX.text">Tuple</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">Connection Count</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Source and Destination</title>
+        <search base="base">
+          <query>`firebox_traffic_action` | chart count(Destination) by Source Destination</query>
+        </search>
+        <option name="charting.axisTitleX.text">Source Address</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <chart>
+        <title>Destination Port</title>
+        <search base="base">
+          <query>`firebox_traffic_action` | search (Protocol="udp" OR Protocol="tcp") | chart count(dest_port) by Protocol dest_port</query>
+        </search>
+        <option name="charting.axisTitleX.text">Protocol</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Denied Count</title>
+        <search base="base">
+          <query>search action="Deny" | stats count</query>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xd93f3c","0xd93f3c"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="underLabel">Denied</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Allowed Count</title>
+        <search base="base">
+          <query>search action="Allow" | stats count</query>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">all</option>
+        <option name="rangeColors">["0x65a637","0x65a637"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="underLabel">Allowed</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <search base="base">
+          <query>search action="Deny" | rename src_port as "Source Port", dest_port as "Destination Port"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <fields>["Time","Firebox","Policy Name","Source","Destination","Protocol","Source Port","Destination Port"]</fields>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <search base="base">
+          <query>search action="Allow" | rename src_port as "Source Port", dest_port as "Destination Port"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">false</option>
+        <fields>["Time","Firebox","Policy Name","Source","Destination","Protocol","Source Port","Destination Port"]</fields>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <event>
+        <title>Management Access</title>
+        <search>
+          <query>index="*" eventtype=wg_firebox_event AND user_type="Management" AND action="logged*"</query>
+          <earliest>-1h@h</earliest>
+          <latest>0</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+    <panel>
+      <event>
+        <title>Configuration Changes</title>
+        <search>
+          <query>index="*" eventtype=wg_firebox_event AND user_type="Management" AND (action="modified*" OR action="added*" OR action="delete*")</query>
+          <earliest>-1h@h</earliest>
+          <latest>0</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>General Count</title>
+        <search>
+          <query>index="*" sourcetype="firebox_logs" NOT eventtype=wg_firebox_traffic | stats count</query>
+          <earliest>-1h@h</earliest>
+          <latest>0</latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="underLabel">General</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <event>
+        <title>General Events</title>
+        <search>
+          <query>index="*" sourcetype="firebox_logs" NOT eventtype=wg_firebox_traffic</query>
+          <earliest>-1h@h</earliest>
+          <latest>0</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <single>
+        <title>Total Count</title>
+        <search>
+          <query>index="*" eventtype=wg_firebox_event | stats count</query>
+          <earliest>-1h@h</earliest>
+          <latest>0</latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x555","0x555"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="underLabel">Total</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <event>
+        <title>All Events</title>
+        <search>
+          <query>index="*" eventtype=wg_firebox_event</query>
+          <earliest>-1h@h</earliest>
+          <latest>0</latest>
+        </search>
+        <option name="count">5</option>
+        <option name="list.drilldown">none</option>
+      </event>
+    </panel>
+  </row>
+</dashboard>

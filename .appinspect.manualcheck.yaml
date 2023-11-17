@@ -1,0 +1,30 @@
+  check_for_known_vulnerabilities_in_third_party_libraries:
+    comment: 'No third party libraries in app'
+  check_for_reverse_shells:
+    comment: 'No reverse shells in app'
+  check_external_data_sources:
+    comment: 'No external data sources in app'
+  check_splunk_logo:
+    comment: 'No Splunk logo in app'
+  check_authorization_credentials:
+    comment: 'No credentials in app'
+  check_embedded_links:
+    comment: 'No embedded links in app'
+  check_fs_writes:
+    comment: 'No filesystem writes in app'
+  check_hard_coded_paths:
+    comment: 'No hard coded paths in app'
+  check_dependencies:
+    comment: 'No dependencies required for app'
+  check_documented_included_open_source:
+    comment: 'No open source included in app'
+  check_editing_and_proofreading:
+    comment: 'Editing checked'
+  check_requires_access_to_files_outside_apps_dir:
+    comment: 'No outside file access required'
+  check_install_on_claimed_targets:
+    comment: 'Confirmed installable on targets'
+  check_link_includes_contact_info:
+    comment: 'Contact info included in readme'
+  check_for_auto_update_features:
+    comment: 'No auto update features present in app'
